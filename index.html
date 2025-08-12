@@ -1,5 +1,6 @@
 ```js
 // student-form.js — Single-file Node.js app serving the HTML form and saving to Excel
+// Suitable for GitHub repository use — includes comments and security notes
 
 const express = require('express');
 const XLSX = require('xlsx');
@@ -13,27 +14,18 @@ const SHEET_NAME = 'Students';
 
 app.use(express.json());
 
+// Append form data to Excel file
 function appendToExcel(obj) {
-  let workbook;
-  if (fs.existsSync(EXCEL_FILE)) {
-    workbook = XLSX.readFile(EXCEL_FILE);
-  } else {
-    workbook = XLSX.utils.book_new();
-  }
+  let workbook = fs.existsSync(EXCEL_FILE) ? XLSX.readFile(EXCEL_FILE) : XLSX.utils.book_new();
   let worksheet = workbook.Sheets[SHEET_NAME];
-  let data = [];
-  if (worksheet) data = XLSX.utils.sheet_to_json(worksheet, { defval: '' });
-
-  const row = Object.assign({}, obj, { timestamp: new Date().toISOString() });
-  data.push(row);
-
-  const newSheet = XLSX.utils.json_to_sheet(data);
-  workbook.Sheets[SHEET_NAME] = newSheet;
+  let data = worksheet ? XLSX.utils.sheet_to_json(worksheet, { defval: '' }) : [];
+  data.push({ ...obj, timestamp: new Date().toISOString() });
+  workbook.Sheets[SHEET_NAME] = XLSX.utils.json_to_sheet(data);
   if (!workbook.SheetNames.includes(SHEET_NAME)) workbook.SheetNames.push(SHEET_NAME);
-
   XLSX.writeFile(workbook, EXCEL_FILE);
 }
 
+// Serve HTML form
 app.get('/', (req, res) => {
   res.send(`<!doctype html>
 <html lang="en">
@@ -99,6 +91,7 @@ clearBtn.addEventListener('click', () => form.reset());
 </html>`);
 });
 
+// API endpoint for form submissions
 app.post('/submit', (req, res) => {
   try {
     if (!req.body.name) return res.status(400).json({ message: 'Name is required' });
@@ -112,10 +105,11 @@ app.post('/submit', (req, res) => {
 app.listen(PORT, () => console.log(`Server running at http://localhost:${PORT}`));
 ```
 
-**Instructions:**
+**GitHub README suggestions:**
 
-1. Save this file as `student-form.js`.
-2. Run `npm init -y` and install dependencies: `npm install express xlsx`.
-3. Start with `node student-form.js`.
-4. Open `http://localhost:3000` in your browser.
-5. Submissions will be stored in `students.xlsx` in the same folder.
+* Include installation steps (`npm install express xlsx`).
+* Usage instructions (`node student-form.js`).
+* A note that this is for local/trusted environments only — not production-hardened.
+* Add `.gitignore` to exclude `students.xlsx` if sensitive.
+* Optionally, include a screenshot of the form in the repo.
+* License file (MIT or your choice).
